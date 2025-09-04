@@ -61,7 +61,17 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				chat: {
+					user: 'hsl(var(--chat-user))',
+					'user-foreground': 'hsl(var(--chat-user-foreground))',
+					bot: 'hsl(var(--chat-bot))',
+					'bot-foreground': 'hsl(var(--chat-bot-foreground))'
 				}
+			},
+			backgroundImage: {
+				'gradient-museum': 'var(--gradient-museum)',
+				'gradient-artwork': 'var(--gradient-artwork)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

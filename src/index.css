@@ -2,41 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Museum-inspired design system for MET chatbot */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Museum palette - warm, sophisticated tones */
+    --background: 42 15% 97%;
+    --foreground: 25 20% 15%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 40 20% 99%;
+    --card-foreground: 25 20% 15%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 40 20% 99%;
+    --popover-foreground: 25 20% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Rich burgundy primary inspired by classical art */
+    --primary: 355 45% 35%;
+    --primary-foreground: 42 15% 97%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Warm cream secondary */
+    --secondary: 42 25% 92%;
+    --secondary-foreground: 25 20% 15%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Soft muted tones */
+    --muted: 42 20% 94%;
+    --muted-foreground: 25 15% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Golden accent for highlights */
+    --accent: 42 55% 75%;
+    --accent-foreground: 25 20% 15%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 42 15% 97%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 42 15% 88%;
+    --input: 42 15% 94%;
+    --ring: 355 45% 35%;
 
-    --radius: 0.5rem;
+    /* Chat-specific colors */
+    --chat-user: 355 45% 35%;
+    --chat-user-foreground: 42 15% 97%;
+    --chat-bot: 42 25% 92%;
+    --chat-bot-foreground: 25 20% 15%;
+
+    /* Gradients */
+    --gradient-museum: linear-gradient(135deg, hsl(42, 25%, 95%), hsl(42, 15%, 97%));
+    --gradient-artwork: linear-gradient(180deg, hsl(42, 20%, 99%), hsl(42, 15%, 96%));
+
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
 
