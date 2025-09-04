@@ -2,11 +2,15 @@ import { MetSearchResponse, MetObject, Mood } from '@/types/met';
 
 const MET_API_BASE = 'https://collectionapi.metmuseum.org/public/collection/v1';
 
-// Departments to avoid (sculpture/statue related)
-const EXCLUDED_DEPARTMENTS = [
-  'Egyptian Art', 
-  'Greek and Roman Art',
-  'Arts of Africa, Oceania, and the Americas'
+// Only allow departments with paintings, photos, and drawings
+const ALLOWED_DEPARTMENTS = [
+  'European Paintings',
+  'American Paintings and Sculpture',
+  'Modern and Contemporary Art',
+  'Photographs',
+  'Drawings and Prints',
+  'Asian Art',
+  'Islamic Art'
 ];
 
 // Mood to search term mappings
@@ -100,13 +104,17 @@ export class MetAPI {
     // Must be public domain
     if (!obj.isPublicDomain) return false;
     
-    // Exclude sculpture-heavy departments
-    if (EXCLUDED_DEPARTMENTS.some(dept => obj.department.includes(dept))) return false;
+    // Only allow paintings, photos, and drawings departments
+    if (!ALLOWED_DEPARTMENTS.some(dept => obj.department.includes(dept))) return false;
     
-    // Exclude obvious sculptures/statues
-    const excludeTerms = ['sculpture', 'statue', 'bust', 'relief', 'marble', 'bronze'];
+    // Exclude sculptures, statues, and 3D objects
+    const excludeTerms = ['sculpture', 'statue', 'bust', 'relief', 'marble', 'bronze', 'ceramic', 'vessel', 'vase', 'bowl', 'cup', 'jar'];
     const combinedText = `${obj.title} ${obj.objectName} ${obj.medium}`.toLowerCase();
     if (excludeTerms.some(term => combinedText.includes(term))) return false;
+    
+    // Only allow 2D artworks - paintings, drawings, prints, photographs
+    const allowedTypes = ['painting', 'drawing', 'print', 'photograph', 'sketch', 'watercolor', 'oil', 'canvas', 'paper', 'etching', 'lithograph'];
+    if (!allowedTypes.some(type => combinedText.includes(type))) return false;
     
     return true;
   }
