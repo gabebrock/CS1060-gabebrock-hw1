@@ -1,1 +1,4 @@
 project_id = "cgzymklixwiuqhqgvcci"
+
+[functions.art-curator-ai]
+verify_jwt = false

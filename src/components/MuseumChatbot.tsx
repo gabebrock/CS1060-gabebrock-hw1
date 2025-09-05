@@ -7,13 +7,14 @@ import { MoodSuggestions } from './chat/MoodSuggestions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Palette } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export const MuseumChatbot = () => {
   const [messages, setMessages] = useState<ChatMessageType[]>([
     {
       id: '1',
       type: 'bot',
-      content: "Hello! I'm your personal art curator from The Metropolitan Museum. Tell me how you'd like to feel, and I'll find the perfect artwork to match your mood.",
+      content: "Hello! I'm your personal art curator from The Metropolitan Museum. Tell me how you'd like to feel, and I'll find the perfect artwork to match your mood. You can also ask me questions about any artworks I show you!",
       timestamp: new Date(),
     }
   ]);
@@ -72,6 +73,39 @@ export const MuseumChatbot = () => {
     return moodResponses[Math.floor(Math.random() * moodResponses.length)];
   };
 
+  const handleAIConversation = async (messageText: string, currentArtwork?: any): Promise<string> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('art-curator-ai', {
+        body: {
+          message: messageText,
+          artwork: currentArtwork,
+          conversationHistory: messages
+        }
+      });
+
+      if (error) {
+        console.error('AI conversation error:', error);
+        return "I'm sorry, I'm having trouble processing your question right now. Please try again.";
+      }
+
+      return data.response || "I'm not sure how to respond to that. Could you ask me something about the artwork or artist?";
+    } catch (error) {
+      console.error('Error calling AI function:', error);
+      return "I'm experiencing some technical difficulties. Please try asking your question again.";
+    }
+  };
+
+  const isQuestionAboutArt = (message: string): boolean => {
+    const questionWords = ['what', 'who', 'when', 'where', 'why', 'how', 'tell me', 'explain', 'describe', 'recommend', 'suggest', 'similar', 'like this', 'other works', 'more about'];
+    const artTerms = ['artist', 'artwork', 'painting', 'sculpture', 'piece', 'work', 'art', 'museum', 'gallery', 'style', 'technique', 'period', 'movement'];
+    
+    const lowerMessage = message.toLowerCase();
+    const hasQuestionWord = questionWords.some(word => lowerMessage.includes(word));
+    const hasArtTerm = artTerms.some(term => lowerMessage.includes(term));
+    
+    return hasQuestionWord || hasArtTerm || lowerMessage.includes('?');
+  };
+
   const handleSendMessage = async (messageText: string) => {
     // Add user message
     const userMessage: ChatMessageType = {
@@ -85,47 +119,68 @@ export const MuseumChatbot = () => {
     setIsLoading(true);
 
     try {
-      // Extract mood from message
-      const mood = MetAPI.extractMoodFromMessage(messageText);
+      // Check if this is a question about art or a mood expression
+      const isQuestion = isQuestionAboutArt(messageText);
       
-      if (mood) {
-        // Get artwork based on mood
-        const artworks = await MetAPI.getObjectsByMood(mood, 1);
+      if (isQuestion) {
+        // Handle as AI conversation
+        const currentArtwork = messages.length > 0 ? 
+          messages[messages.length - 1]?.artwork : null;
         
-        if (artworks.length > 0) {
-          const artwork = artworks[0];
-          const botMessage: ChatMessageType = {
-            id: (Date.now() + 1).toString(),
-            type: 'bot',
-            content: generateBotResponse(mood, artwork),
-            timestamp: new Date(),
-            artwork: artwork,
-          };
-          setMessages(prev => [...prev, botMessage]);
+        const aiResponse = await handleAIConversation(messageText, currentArtwork);
+        
+        const botMessage: ChatMessageType = {
+          id: (Date.now() + 1).toString(),
+          type: 'bot',
+          content: aiResponse,
+          timestamp: new Date(),
+          artwork: currentArtwork
+        };
+        
+        setMessages(prev => [...prev, botMessage]);
+      } else {
+        // Handle as mood-based artwork discovery
+        const mood = MetAPI.extractMoodFromMessage(messageText);
+        
+        if (mood) {
+          // Get artwork based on mood
+          const artworks = await MetAPI.getObjectsByMood(mood, 1);
+          
+          if (artworks.length > 0) {
+            const artwork = artworks[0];
+            const botMessage: ChatMessageType = {
+              id: (Date.now() + 1).toString(),
+              type: 'bot',
+              content: generateBotResponse(mood, artwork),
+              timestamp: new Date(),
+              artwork: artwork,
+            };
+            setMessages(prev => [...prev, botMessage]);
+          } else {
+            const botMessage: ChatMessageType = {
+              id: (Date.now() + 1).toString(),
+              type: 'bot',
+              content: "I couldn't find artworks matching that mood right now. Could you try describing your desired feeling differently?",
+              timestamp: new Date(),
+            };
+            setMessages(prev => [...prev, botMessage]);
+          }
         } else {
           const botMessage: ChatMessageType = {
             id: (Date.now() + 1).toString(),
             type: 'bot',
-            content: "I couldn't find artworks matching that mood right now. Could you try describing your desired feeling differently?",
+            content: "I'd love to help you find the perfect artwork! Tell me how you'd like to feel, or ask me questions about art - for example, 'I want to feel happy' or 'Tell me about this artist'.",
             timestamp: new Date(),
           };
           setMessages(prev => [...prev, botMessage]);
         }
-      } else {
-        const botMessage: ChatMessageType = {
-          id: (Date.now() + 1).toString(),
-          type: 'bot',
-          content: "I'd love to help you find the perfect artwork! Please tell me how you'd like to feel - for example, 'I want to feel happy' or 'I need something peaceful'.",
-          timestamp: new Date(),
-        };
-        setMessages(prev => [...prev, botMessage]);
       }
     } catch (error) {
       console.error('Error processing message:', error);
       const errorMessage: ChatMessageType = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: "I'm having trouble accessing the museum's collection right now. Please try again in a moment.",
+        content: "I'm having trouble right now. Please try again in a moment.",
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);
