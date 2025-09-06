@@ -9,7 +9,7 @@ interface MoodSuggestionsProps {
 const MOOD_SUGGESTIONS: { mood: Mood; label: string; emoji: string }[] = [
   { mood: 'happy', label: 'Make me happy', emoji: '😊' },
   { mood: 'peaceful', label: 'I need peace', emoji: '🕊️' },
-  { mood: 'energized', label: 'Energize me', emoji: '⚡' },
+  { mood: 'energized', label: 'Excite me', emoji: '🔥' },
   { mood: 'inspired', label: 'Inspire me', emoji: '✨' },
   { mood: 'mysterious', label: 'Show me mystery', emoji: '🌙' },
   { mood: 'sad', label: 'I feel melancholy', emoji: '🌧️' },
