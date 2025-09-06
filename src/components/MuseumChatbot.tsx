@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChatMessage as ChatMessageType } from '@/types/met';
+import { ChatMessage as ChatMessageType, MetObject } from '@/types/met';
 import { MetAPI } from '@/utils/metApi';
 import { ChatMessage } from './chat/ChatMessage';
 import { ChatInput } from './chat/ChatInput';
 import { MoodSuggestions } from './chat/MoodSuggestions';
+import { ArtworkModal } from './chat/ArtworkModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Palette } from 'lucide-react';
@@ -19,6 +20,8 @@ export const MuseumChatbot = () => {
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedArtwork, setSelectedArtwork] = useState<MetObject | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -189,6 +192,18 @@ export const MuseumChatbot = () => {
     }
   };
 
+  const handleArtworkClick = (artwork: MetObject | undefined) => {
+    if (artwork) {
+      setSelectedArtwork(artwork);
+      setIsModalOpen(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedArtwork(null);
+  };
+
   return (
     <div className="h-full flex flex-col bg-gradient-museum">
       <Card className="flex-1 flex flex-col border-border/50 bg-card/95 backdrop-blur-sm">
@@ -206,7 +221,11 @@ export const MuseumChatbot = () => {
           <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
             <div className="space-y-4">
               {messages.map((message) => (
-                <ChatMessage key={message.id} message={message} />
+                <ChatMessage 
+                  key={message.id} 
+                  message={message} 
+                  onArtworkClick={handleArtworkClick}
+                />
               ))}
               
               {messages.length === 1 && !isLoading && (
@@ -225,6 +244,12 @@ export const MuseumChatbot = () => {
           </div>
         </CardContent>
       </Card>
+      
+      <ArtworkModal 
+        artwork={selectedArtwork}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 };

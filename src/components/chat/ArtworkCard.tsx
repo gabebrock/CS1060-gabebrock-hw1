@@ -4,12 +4,16 @@ import { ExternalLink, Calendar, Palette } from 'lucide-react';
 
 interface ArtworkCardProps {
   artwork: MetObject;
+  onImageClick?: () => void;
 }
 
-export const ArtworkCard = ({ artwork }: ArtworkCardProps) => {
+export const ArtworkCard = ({ artwork, onImageClick }: ArtworkCardProps) => {
   return (
     <Card className="overflow-hidden bg-gradient-artwork border-border/50 hover:shadow-lg transition-all duration-300">
-      <div className="aspect-[4/3] relative overflow-hidden bg-muted">
+      <div 
+        className="aspect-[4/3] relative overflow-hidden bg-muted cursor-pointer" 
+        onClick={onImageClick}
+      >
         {artwork.primaryImageSmall && (
           <img
             src={artwork.primaryImageSmall}

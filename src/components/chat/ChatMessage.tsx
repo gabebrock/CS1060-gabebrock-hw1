@@ -3,9 +3,10 @@ import { ArtworkCard } from './ArtworkCard';
 
 interface ChatMessageProps {
   message: ChatMessageType;
+  onArtworkClick?: (artwork: ChatMessageType['artwork']) => void;
 }
 
-export const ChatMessage = ({ message }: ChatMessageProps) => {
+export const ChatMessage = ({ message, onArtworkClick }: ChatMessageProps) => {
   const isUser = message.type === 'user';
   
   return (
@@ -34,7 +35,10 @@ export const ChatMessage = ({ message }: ChatMessageProps) => {
             {/* Artwork card for bot messages */}
             {!isUser && message.artwork && (
               <div className="mt-4">
-                <ArtworkCard artwork={message.artwork} />
+                <ArtworkCard 
+                  artwork={message.artwork} 
+                  onImageClick={() => onArtworkClick?.(message.artwork)}
+                />
               </div>
             )}
             
