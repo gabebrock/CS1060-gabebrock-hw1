@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const groqApiKey = Deno.env.get('GROQ_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,8 +17,8 @@ serve(async (req) => {
   try {
     const { message, artwork, conversationHistory } = await req.json();
 
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
+    if (!groqApiKey) {
+      throw new Error('Groq API key not configured');
     }
 
     // Build the system prompt with artwork context
@@ -70,16 +70,16 @@ Current artwork context:
     // Add the current message
     messages.push({ role: 'user', content: message });
 
-    console.log('Sending request to OpenAI with messages:', messages.length);
+    console.log('Sending request to Groq with messages:', messages.length);
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${groqApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: 'llama-3.1-70b-versatile',
         messages: messages,
         max_tokens: 500,
         temperature: 0.7,
@@ -88,8 +88,8 @@ Current artwork context:
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('OpenAI API error:', response.status, errorData);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      console.error('Groq API error:', response.status, errorData);
+      throw new Error(`Groq API error: ${response.status}`);
     }
 
     const data = await response.json();
