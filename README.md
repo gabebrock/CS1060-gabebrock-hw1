@@ -11,7 +11,7 @@ tags:
 
 **GitHub repository URL:** [https://github.com/gabebrock/CS1060--hw1]()
 **Lovable URL:** [https://lovable.dev/projects/d95dbefc-9864-4835-aec3-0a45f8d92a83]()
-**Netlify development URL:** []()
+**Netlify development URL:** [https://aicuratormet.netlify.app]()
 
 **Work share:** 100% (Worked alone)
 **Issues encountered:**
