@@ -19,14 +19,7 @@ export const ArtworkModal = ({ artwork, isOpen, onClose }: ArtworkModalProps) =>
           <DialogTitle className="text-xl font-semibold pr-8">
             {artwork.title}
           </DialogTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-4 top-4"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          
         </DialogHeader>
         
         <div className="space-y-4">
