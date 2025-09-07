@@ -28,9 +28,9 @@
     --muted: 42 20% 94%;
     --muted-foreground: 25 15% 45%;
 
-    /* Official MET red accent */
-    --accent: 10 100% 45%;
-    --accent-foreground: 42 15% 97%;
+    /* Golden accent for highlights */
+    --accent: 42 55% 75%;
+    --accent-foreground: 25 20% 15%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 42 15% 97%;
