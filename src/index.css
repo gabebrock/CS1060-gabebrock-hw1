@@ -113,6 +113,15 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-met-sans;
+  }
+
+  /* Typography hierarchy using Met-inspired fonts */
+  h1, h2, h3 {
+    @apply font-met-serif;
+  }
+
+  h4, h5, h6 {
+    @apply font-met-sans font-semibold;
   }
 }

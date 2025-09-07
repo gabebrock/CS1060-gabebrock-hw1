@@ -18,6 +18,10 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				'met-serif': ['Crimson Text', 'serif'], // For major headings (similar to Met Serif)
+				'met-sans': ['Inter', 'sans-serif'], // Primary font (similar to Met Sans)
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
