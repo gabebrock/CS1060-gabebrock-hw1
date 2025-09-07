@@ -14,12 +14,17 @@ tags:
 - **Netlify development URL:** [https://aicuratormet.netlify.apphttps://aicuratormet.netlify.app]()
 
 **Work share:** 100% (Worked alone)
+
 **Issues encountered:**
 
 1. While implementing the chatbot, I continously ran into conversation errors, "Sorry, I'm having trouble processing your question right now." I checked the Supabase logs and saw that I was producing 429 errors (exceeding API quota). 
    1. I checked my Supabase integration to ensure my API key was valid because my OpenAI dashboard was not indicating any usage. I switched the edge function to call a cheaper model and ran into the same issue. 
-   2. Forums led me to realize that I could not make API calls on the free tier without adding credits so I switched to another LLM (Grok, `llama-3.3-70b-versatile`) Issue Resolved. 
+   2. Forums led me to realize that I could not make API calls on the free tier without adding credits so I switched to another LLM (Groq, `llama-3.3-70b-versatile`) Issue Resolved. 
+2. Ran into one occurence of the bot hallucinating. Even though the frontend has a direct injection of artist info, for some reason one of the response's mistankenly corrected the API on the artist's name.
    
-**Hours of work:** 4.5
+   
+**Hours of work:** approx 5.5
 
-To view the project locally, clone the repo, insall the necessary dependencies `npm i`, and start the development server `npm run dev`
+**Dev Tools** 
+
+I used [Lovable](https://lovable.dev) to help develop my project. To view the project locally, clone the repo, insall the necessary dependencies `npm i`, and start the development server `npm run dev`

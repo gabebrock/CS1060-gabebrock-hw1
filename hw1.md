@@ -1,5 +1,5 @@
 # Homework 1
-*Homework 1 due September 8, 9 pm ET*
+*Homework 1 due September 8, 9 pm ET* 
 
 - Using Generative AI, complete either (a) the game you started in class on 2 September, including a nontrivial computer play algorithm; or (b) the service built on a public API you started in class on 4 September.
 - You should check in your program to GitHub. For this assignment, you should create your own personal GitHub account and a private GitHub repository named below.
@@ -10,7 +10,8 @@
 - Your program should rely only on easily downloadable dependencies. To test this, create a new Netlify deployment environment, clone the GitHub repo into it, and run it according to your instructions. Please provide a way to reach you if we get stuck building your submission.
 - Deploy your program to Netlify using the Bolt integration.
 - You may work with one partner (as a team of 2) if you desire. We expect twice as much work from teams of 2. Team grades will be shared.
-Submission Instructions:
+  
+## Submission Instructions:
 
 *DO NOT WAIT UNTIL THE LAST MINUTE TO SET UP YOUR GITHUB INTEGRATIONS. TEST THEM AHEAD OF TIME SO YOU DON'T RUN OUT OF TIME SUBMITTING.*
 
