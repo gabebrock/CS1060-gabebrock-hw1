@@ -98,15 +98,19 @@ export const MuseumChatbot = () => {
     }
   };
 
-  const isQuestionAboutArt = (message: string): boolean => {
-    const questionWords = ['what', 'who', 'when', 'where', 'why', 'how', 'tell me', 'explain', 'describe', 'recommend', 'suggest', 'similar', 'like this', 'other works', 'more about'];
-    const artTerms = ['artist', 'artwork', 'painting', 'sculpture', 'piece', 'work', 'art', 'museum', 'gallery', 'style', 'technique', 'period', 'movement'];
+  const isMoodRequest = (message: string): boolean => {
+    const moodKeywords = ['feel', 'mood', 'emotion', 'want to be', 'make me', 'need something'];
+    const explicitMoodRequests = ['i want to feel', 'make me feel', 'i need to feel', 'help me feel', 'show me something'];
     
     const lowerMessage = message.toLowerCase();
-    const hasQuestionWord = questionWords.some(word => lowerMessage.includes(word));
-    const hasArtTerm = artTerms.some(term => lowerMessage.includes(term));
     
-    return hasQuestionWord || hasArtTerm || lowerMessage.includes('?');
+    // Check for explicit mood requests
+    const hasExplicitRequest = explicitMoodRequests.some(phrase => lowerMessage.includes(phrase));
+    
+    // Check for simple mood words at the start
+    const startsWithMood = /^(happy|sad|peaceful|excited|inspired|mysterious|calm|energetic|joyful|melancholy)$/i.test(lowerMessage.trim());
+    
+    return hasExplicitRequest || startsWithMood;
   };
 
   const handleSendMessage = async (messageText: string) => {
@@ -122,26 +126,10 @@ export const MuseumChatbot = () => {
     setIsLoading(true);
 
     try {
-      // Check if this is a question about art or a mood expression
-      const isQuestion = isQuestionAboutArt(messageText);
+      // Check if this is a specific mood request or general conversation
+      const isMoodReq = isMoodRequest(messageText);
       
-      if (isQuestion) {
-        // Handle as AI conversation
-        const currentArtwork = messages.length > 0 ? 
-          messages[messages.length - 1]?.artwork : null;
-        
-        const aiResponse = await handleAIConversation(messageText, currentArtwork);
-        
-        const botMessage: ChatMessageType = {
-          id: (Date.now() + 1).toString(),
-          type: 'bot',
-          content: aiResponse,
-          timestamp: new Date(),
-          artwork: currentArtwork
-        };
-        
-        setMessages(prev => [...prev, botMessage]);
-      } else {
+      if (isMoodReq) {
         // Handle as mood-based artwork discovery
         const mood = MetAPI.extractMoodFromMessage(messageText);
         
@@ -169,14 +157,38 @@ export const MuseumChatbot = () => {
             setMessages(prev => [...prev, botMessage]);
           }
         } else {
+          // Still try AI conversation even if mood extraction failed
+          const currentArtwork = messages.length > 0 ? 
+            messages[messages.length - 1]?.artwork : null;
+          
+          const aiResponse = await handleAIConversation(messageText, currentArtwork);
+          
           const botMessage: ChatMessageType = {
             id: (Date.now() + 1).toString(),
             type: 'bot',
-            content: "I'd love to help you find the perfect artwork! Tell me how you'd like to feel, or ask me questions about art - for example, 'I want to feel happy' or 'Tell me about this artist'.",
+            content: aiResponse,
             timestamp: new Date(),
+            artwork: currentArtwork
           };
+          
           setMessages(prev => [...prev, botMessage]);
         }
+      } else {
+        // Handle all other messages as AI conversation
+        const currentArtwork = messages.length > 0 ? 
+          messages[messages.length - 1]?.artwork : null;
+        
+        const aiResponse = await handleAIConversation(messageText, currentArtwork);
+        
+        const botMessage: ChatMessageType = {
+          id: (Date.now() + 1).toString(),
+          type: 'bot',
+          content: aiResponse,
+          timestamp: new Date(),
+          artwork: currentArtwork
+        };
+        
+        setMessages(prev => [...prev, botMessage]);
       }
     } catch (error) {
       console.error('Error processing message:', error);
