@@ -76,7 +76,7 @@ export const MuseumChatbot = () => {
     return moodResponses[Math.floor(Math.random() * moodResponses.length)];
   };
 
-  const handleAIConversation = async (messageText: string, currentArtwork?: any): Promise<{ response: string; newArtwork?: MetObject }> => {
+  const handleAIConversation = async (messageText: string, currentArtwork?: any): Promise<string> => {
     try {
       const { data, error } = await supabase.functions.invoke('art-curator-ai', {
         body: {
@@ -88,44 +88,35 @@ export const MuseumChatbot = () => {
 
       if (error) {
         console.error('AI conversation error:', error);
-        return { response: "I'm sorry, I'm having trouble processing your question right now. Please try again." };
+        return "I'm sorry, I'm having trouble processing your question right now. Please try again.";
       }
 
-      // Check if user is asking for alternative artworks
-      const messageLC = messageText.toLowerCase();
-      const isRequestingAlternatives = 
-        messageLC.includes('show me another') ||
-        messageLC.includes('show me other') ||
-        messageLC.includes('different') ||
-        messageLC.includes("doesn't make me feel") ||
-        messageLC.includes("why would this") ||
-        (messageLC.includes('show me') && (messageLC.includes('other') || messageLC.includes('more')));
-
-      let newArtwork = undefined;
-      
-      if (isRequestingAlternatives && currentArtwork) {
-        // Extract mood from original or current message
-        const mood = MetAPI.extractMoodFromMessage(messageText) || 
-                     MetAPI.extractMoodFromMessage(messages.find(m => m.artwork)?.content || '');
-        
-        if (mood) {
-          const artworks = await MetAPI.getObjectsByMood(mood, 3);
-          // Get a different artwork than the current one
-          const alternatives = artworks.filter(art => art.objectID !== currentArtwork.objectID);
-          if (alternatives.length > 0) {
-            newArtwork = alternatives[Math.floor(Math.random() * alternatives.length)];
-          }
-        }
-      }
-
-      return { 
-        response: data.response || "I'm not sure how to respond to that. Could you ask me something about the artwork or artist?",
-        newArtwork 
-      };
+      return data.response || "I'm not sure how to respond to that. Could you ask me something about the artwork or artist?";
     } catch (error) {
       console.error('Error calling AI function:', error);
-      return { response: "I'm experiencing some technical difficulties. Please try asking your question again." };
+      return "I'm experiencing some technical difficulties. Please try asking your question again.";
     }
+  };
+
+  const isComplaintOrAlternativeRequest = (message: string): boolean => {
+    const lowerMessage = message.toLowerCase();
+    
+    const complaintPhrases = [
+      'show me another',
+      'show me other',
+      'show me something different',
+      'show me more',
+      'different',
+      "doesn't make me feel",
+      "why would this",
+      "are you kidding",
+      "not feeling",
+      "show me examples",
+      "other pieces",
+      "other examples"
+    ];
+    
+    return complaintPhrases.some(phrase => lowerMessage.includes(phrase));
   };
 
   const isMoodRequest = (message: string): boolean => {
@@ -156,25 +147,69 @@ export const MuseumChatbot = () => {
     setIsLoading(true);
 
     try {
-      // Check if this is a specific mood request or general conversation
+      // Check if this is a mood request, complaint about current artwork, or general conversation
       const isMoodReq = isMoodRequest(messageText);
+      const isComplaint = isComplaintOrAlternativeRequest(messageText);
       
-      if (isMoodReq) {
+      if (isMoodReq || isComplaint) {
         // Handle as mood-based artwork discovery
-        const mood = MetAPI.extractMoodFromMessage(messageText);
+        let mood: any = null;
+        
+        if (isComplaint) {
+          // For complaints, try to extract mood from the current message or find the last mood used
+          mood = MetAPI.extractMoodFromMessage(messageText);
+          
+          // If no mood in current message, find the last mood from conversation history
+          if (!mood) {
+            for (let i = messages.length - 1; i >= 0; i--) {
+              if (messages[i].artwork) {
+                // Try to extract mood from the message that showed this artwork
+                const moodFromHistory = MetAPI.extractMoodFromMessage(messages[i].content);
+                if (moodFromHistory) {
+                  mood = moodFromHistory;
+                  break;
+                }
+              }
+            }
+          }
+          
+          // Default to 'peaceful' if we can't determine the mood
+          if (!mood) mood = 'peaceful';
+        } else {
+          mood = MetAPI.extractMoodFromMessage(messageText);
+        }
         
         if (mood) {
-          // Get artwork based on mood
-          const artworks = await MetAPI.getObjectsByMood(mood, 1);
+          // Get artwork based on mood, get more options for complaints
+          const artworkCount = isComplaint ? 5 : 1;
+          const artworks = await MetAPI.getObjectsByMood(mood, artworkCount);
           
           if (artworks.length > 0) {
-            const artwork = artworks[0];
+            let selectedArtwork = artworks[0];
+            
+            // If this is a complaint, try to get a different artwork than the current one
+            if (isComplaint) {
+              const currentArtwork = messages.length > 0 ? 
+                messages[messages.length - 1]?.artwork : null;
+              
+              if (currentArtwork) {
+                const alternatives = artworks.filter(art => art.objectID !== currentArtwork.objectID);
+                if (alternatives.length > 0) {
+                  selectedArtwork = alternatives[Math.floor(Math.random() * alternatives.length)];
+                }
+              }
+            }
+            
+            const responseText = isComplaint ? 
+              "I understand that piece didn't resonate with you. Let me show you something different that might better capture the feeling you're looking for!" :
+              generateBotResponse(mood, selectedArtwork);
+            
             const botMessage: ChatMessageType = {
               id: (Date.now() + 1).toString(),
               type: 'bot',
-              content: generateBotResponse(mood, artwork),
+              content: responseText,
               timestamp: new Date(),
-              artwork: artwork,
+              artwork: selectedArtwork,
             };
             setMessages(prev => [...prev, botMessage]);
           } else {
@@ -191,14 +226,14 @@ export const MuseumChatbot = () => {
           const currentArtwork = messages.length > 0 ? 
             messages[messages.length - 1]?.artwork : null;
           
-          const aiResult = await handleAIConversation(messageText, currentArtwork);
+          const aiResponse = await handleAIConversation(messageText, currentArtwork);
           
           const botMessage: ChatMessageType = {
             id: (Date.now() + 1).toString(),
             type: 'bot',
-            content: aiResult.response,
+            content: aiResponse,
             timestamp: new Date(),
-            artwork: aiResult.newArtwork || currentArtwork
+            artwork: currentArtwork
           };
           
           setMessages(prev => [...prev, botMessage]);
@@ -208,14 +243,14 @@ export const MuseumChatbot = () => {
         const currentArtwork = messages.length > 0 ? 
           messages[messages.length - 1]?.artwork : null;
         
-        const aiResult = await handleAIConversation(messageText, currentArtwork);
+        const aiResponse = await handleAIConversation(messageText, currentArtwork);
         
         const botMessage: ChatMessageType = {
           id: (Date.now() + 1).toString(),
           type: 'bot',
-          content: aiResult.response,
+          content: aiResponse,
           timestamp: new Date(),
-          artwork: aiResult.newArtwork || currentArtwork
+          artwork: currentArtwork
         };
         
         setMessages(prev => [...prev, botMessage]);
