@@ -113,7 +113,8 @@ export const MuseumChatbot = () => {
       "not feeling",
       "show me examples",
       "other pieces",
-      "other examples"
+      "other examples",
+      "show me something else"
     ];
     
     return complaintPhrases.some(phrase => lowerMessage.includes(phrase));
