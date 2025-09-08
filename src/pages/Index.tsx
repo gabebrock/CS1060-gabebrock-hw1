@@ -1,4 +1,5 @@
 import { MuseumChatbot } from '@/components/MuseumChatbot';
+import { BugReportForm } from '@/components/BugReportForm';
 
 const Index = () => {
   return (
@@ -14,6 +15,9 @@ const Index = () => {
         </div>
         <div className="h-[calc(100%-8rem)]">
           <MuseumChatbot />
+        </div>
+        <div className="text-center mt-4">
+          <BugReportForm />
         </div>
       </div>
     </div>
