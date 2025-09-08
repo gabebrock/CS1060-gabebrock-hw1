@@ -6,29 +6,19 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Bug, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export const BugReportForm = () => {
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
     issue: '',
     description: '',
     screenshot: null as File | null
   });
-  const [captcha, setCaptcha] = useState({ num1: 0, num2: 0, answer: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
-
-  // Generate new captcha when dialog opens
-  const generateCaptcha = () => {
-    const num1 = Math.floor(Math.random() * 10) + 1;
-    const num2 = Math.floor(Math.random() * 10) + 1;
-    setCaptcha({ num1, num2, answer: '' });
-  };
-
-  const handleOpen = () => {
-    setIsOpen(true);
-    generateCaptcha();
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -50,45 +40,105 @@ export const BugReportForm = () => {
       toast({ title: "Issue description is required", variant: "destructive" });
       return false;
     }
-    if (parseInt(captcha.answer) !== (captcha.num1 + captcha.num2)) {
-      toast({ title: "Captcha answer is incorrect", variant: "destructive" });
-      return false;
-    }
     return true;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const uploadScreenshot = async (file: File): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('bug-screenshots')
+        .upload(fileName, file);
+
+      if (error) {
+        console.error('Screenshot upload error:', error);
+        return null;
+      }
+
+      return fileName;
+    } catch (error) {
+      console.error('Screenshot upload error:', error);
+      return null;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) return;
 
-    const subject = `[MET CURATOR ISSUE] ${formData.issue}`;
-    const body = `Name: ${formData.name}
+    setIsSubmitting(true);
 
-Issue: ${formData.issue}
+    try {
+      let screenshotUrl = null;
+      
+      // Upload screenshot if provided
+      if (formData.screenshot) {
+        screenshotUrl = await uploadScreenshot(formData.screenshot);
+        if (!screenshotUrl) {
+          toast({ 
+            title: "Screenshot upload failed", 
+            description: "Continuing with bug report submission",
+            variant: "destructive" 
+          });
+        }
+      }
 
-Description:
-${formData.description}
+      // Save to database
+      const { error: dbError } = await supabase
+        .from('bug_reports')
+        .insert({
+          name: formData.name,
+          email: formData.email,
+          issue_title: formData.issue,
+          description: formData.description,
+          screenshot_url: screenshotUrl,
+          user_agent: navigator.userAgent
+        });
 
-${formData.screenshot ? `Screenshot attached: ${formData.screenshot.name}` : 'No screenshot attached'}
+      if (dbError) {
+        console.error('Database error:', dbError);
+        throw new Error('Failed to save bug report');
+      }
 
----
-Submitted from MET Museum Art Curator App`;
+      // Send email notification
+      try {
+        await supabase.functions.invoke('send-bug-report', {
+          body: {
+            name: formData.name,
+            email: formData.email,
+            issueTitle: formData.issue,
+            description: formData.description,
+            screenshotUrl: screenshotUrl,
+            userAgent: navigator.userAgent
+          }
+        });
+      } catch (emailError) {
+        console.error('Email notification failed:', emailError);
+        // Don't throw here - bug report was saved successfully
+      }
 
-    const mailtoLink = `mailto:gbrock@college.harvard.edu?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    
-    // Open email client
-    window.open(mailtoLink);
-    
-    // Reset form
-    setFormData({ name: '', issue: '', description: '', screenshot: null });
-    setCaptcha({ num1: 0, num2: 0, answer: '' });
-    setIsOpen(false);
-    
-    toast({ 
-      title: "Email client opened", 
-      description: "Please send the email from your email client. If you have a screenshot, please attach it manually." 
-    });
+      // Reset form
+      setFormData({ name: '', email: '', issue: '', description: '', screenshot: null });
+      setIsOpen(false);
+      
+      toast({ 
+        title: "Bug report submitted successfully!", 
+        description: "Thank you for helping us improve the app." 
+      });
+
+    } catch (error) {
+      console.error('Submission error:', error);
+      toast({ 
+        title: "Submission failed", 
+        description: "Please try again or contact support.",
+        variant: "destructive" 
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -98,7 +148,6 @@ Submitted from MET Museum Art Curator App`;
           variant="ghost" 
           size="sm" 
           className="text-muted-foreground hover:text-foreground"
-          onClick={handleOpen}
         >
           <Bug className="w-4 h-4 mr-2" />
           Report Issue
@@ -120,6 +169,17 @@ Submitted from MET Museum Art Curator App`;
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               placeholder="Enter your name"
               required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="email">Email (Optional)</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              placeholder="Your email address"
             />
           </div>
           
@@ -168,28 +228,13 @@ Submitted from MET Museum Art Curator App`;
             </div>
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="captcha">Security Check</Label>
-            <div className="flex items-center gap-2">
-              <span className="text-sm">What is {captcha.num1} + {captcha.num2}?</span>
-              <Input
-                id="captcha"
-                type="number"
-                value={captcha.answer}
-                onChange={(e) => setCaptcha(prev => ({ ...prev, answer: e.target.value }))}
-                placeholder="Answer"
-                className="w-20"
-                required
-              />
-            </div>
-          </div>
           
           <div className="flex gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1">
               Cancel
             </Button>
-            <Button type="submit" className="flex-1">
-              Submit Issue
+            <Button type="submit" className="flex-1" disabled={isSubmitting}>
+              {isSubmitting ? 'Submitting...' : 'Submit Issue'}
             </Button>
           </div>
         </form>
